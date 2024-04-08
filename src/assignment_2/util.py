@@ -1,48 +1,72 @@
+
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import udf
-from pyspark.sql.types import StructType, StructField, StringType
+from pyspark.sql.types import StringType, StructType, StructField
 
 
-# Function to create Spark session
-def create_spark_session():
-    return SparkSession.builder.appName("Assignment 2").getOrCreate()
+def spark_session():
+    spark = SparkSession.builder.appName('spark-assignment').getOrCreate()
+    return spark
 
 
-# Function to create DataFrame
-def create_dataframe(spark):
-    data = [
-        ("1234567891234567",),
-        ("5678912345671234",),
-        ("9123456712345678",),
-        ("1234567812341122",),
-        ("1234567812341342",)
-    ]
-    schema = StructType([
-        StructField("card_number", StringType(), True)
-    ])
-    return spark.createDataFrame(data, schema=schema)
+credit_card_data = [("1234567891234567",),
+                    ("5678912345671234",),
+                    ("9123456712345678",),
+                    ("1234567812341122",),
+                    ("1234567812341342",)]
+credit_card_schema = ["credit_card"]
+credit_card_custom_schema = StructType([
+    StructField("card_number", StringType(), True)
+])
 
 
-# Function to print number of partitions
-def print_partitions(df):
-    initial_partition = df.rdd.getNumPartitions()
-    print("Number of partitions before repartitioning:", initial_partition)
+def create_df(spark, df_data, df_schema):
+    df = spark.createDataFrame(df_data, df_schema)
+    return df
 
 
-# Function to increase partition size to 5
-def increase_partitions(df, initial_partition):
-    return df.repartition(initial_partition + 5)
+def create_df_custom_schema(spark, data, custom_schema):
+    df = spark.createDataFrame(data, custom_schema)
+    return df
 
 
-# Function to decrease partition size back to original size
-def decrease_partitions(df, initial_partition):
-    return df.coalesce(initial_partition)
+def create_df_csv(spark, path_csv, schema):
+    df = spark.read.option("header", "true").format("csv").schema(schema).load(path_csv)
+    return df
 
 
-# Function to mask the card numbers, showing only the last 4 digits
-def mask_card_numbers(df):
-    def hide(card_number):
-        return "*" * (len(card_number) - 4) + card_number[-4:]
+def create_df_csv_custom_schema(spark, path_csv, custom_schema):
+    df = spark.read.format("csv").option("header", "true").schema(custom_schema).load(path_csv)
+    return df
 
-    hide_udf = udf(hide, StringType())
-    return df.withColumn("masked_card_number", hide_udf(df["card_number"]))
+
+def create_df_json(spark, path_json):
+    df = spark.read.option("multiline", "true").json(path_json)
+    return df
+
+
+def get_no_of_partitions(df):
+    total_partitions = df.rdd.getNumPartitions()
+    return total_partitions
+
+
+def increase_partition_by_5(df):
+    total_partition = get_no_of_partitions(df)
+    new_total_partition = df.rdd.repartition(total_partition + 5)
+    new_total_partition_size = new_total_partition.getNumPartitions()
+    return new_total_partition_size
+
+
+def decrease_partition_by_5(df):
+    new_total_partition = increase_partition_by_5(df)
+    original_partition = df.rdd.repartition(new_total_partition - 5)
+    original_partition_size = original_partition.getNumPartitions()
+    return original_partition_size
+
+
+def masked_card_number(cardNumber):
+    masked_number = '*' * (len(cardNumber) - 4) + cardNumber[-4:]
+    return masked_number
+
+
+masked_card_number_udf = udf(masked_card_number)

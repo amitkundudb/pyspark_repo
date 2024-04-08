@@ -1,20 +1,21 @@
+
 import unittest
-from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType
-
-from src.assignment_3.util import calculate_actions_last_7_days, convert_timestamp_to_date, rename_column, \
-    create_dataframe, create_spark_session
+from src.assignment_3.util import *
 
 
-class TestPysparkFunctions(unittest.TestCase):
-
+class TestAssignment3(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Initialize Spark session
-        cls.spark = SparkSession.builder.appName("Unit Test").getOrCreate()
+        cls.spark = SparkSession.builder.appName("PySpark Assignment").getOrCreate()
 
-        # Create DataFrame
-        cls.data = [
+    @classmethod
+    def tearDownClass(cls):
+        cls.spark.stop()
+
+    def test_rename_df(self):
+        df = create_df(self.spark, log_data, log_schema)
+        expected_df = updateColumnName(df)
+        test_log_data = [
             (1, 101, 'login', '2023-09-05 08:30:00'),
             (2, 102, 'click', '2023-09-06 12:45:00'),
             (3, 101, 'click', '2023-09-07 14:15:00'),
@@ -24,47 +25,37 @@ class TestPysparkFunctions(unittest.TestCase):
             (7, 103, 'click', '2023-09-11 10:15:00'),
             (8, 102, 'click', '2023-09-12 13:10:00')
         ]
-        cls.schema = StructType([
-            StructField("log id", IntegerType(), True),
-            StructField("user$id", IntegerType(), True),
-            StructField("action", StringType(), True),
-            StructField("timestamp", StringType(), True),
+        test_log_schema = StructType([
+            StructField("log_id", IntegerType(), True),
+            StructField("user_id", IntegerType(), True),
+            StructField("user_activity", StringType(), True),
+            StructField("timestamp", StringType(), True)
         ])
-        cls.df = cls.spark.createDataFrame(cls.data, schema=cls.schema)
+        actual_df = create_df(self.spark, test_log_data, test_log_schema)
+        self.assertEqual(expected_df.collect(), actual_df.collect())
 
-    @classmethod
-    def tearDownClass(cls):
-        # Stop Spark session
-        cls.spark.stop()
+    def test_no_of_action_performed(self):
+        df = create_df(self.spark, log_data, log_schema)
+        df = updateColumnName(df)
+        expected_df = action_performed_last_7(df)
+        self.assertEqual(expected_df.count(), 3)
 
-    # Test function to create Spark session
-    def test_create_spark_session(self):
-        spark_session = create_spark_session()
-        self.assertTrue(isinstance(spark_session, SparkSession))
-
-    # Test function to create DataFrame
-    def test_create_dataframe(self):
-        df = create_dataframe(self.spark)
-        self.assertEqual(df.count(), len(self.data))
-
-    # Test function to rename DataFrame columns
-    def test_rename_column(self):
-        columns = {"log id": "log_id", "user$id": "user_id", "timestamp": "time_stamp"}
-        df = rename_column(self.df, columns)
-        self.assertTrue(all(col_name in df.columns for col_name in columns.values()))
-
-    # Test function to calculate the number of actions performed by each user in the last 7 days
-    def test_calculate_actions_last_7_days(self):
-        result_df = calculate_actions_last_7_days(self.df)
-        expected_result = [(101, 3), (102, 3), (103, 2)]
-        result_list = [(row['user_id'], row['count']) for row in result_df.collect()]
-        self.assertEqual(sorted(result_list), sorted(expected_result))
-
-    # Test function to convert timestamp to date
-    def test_convert_timestamp_to_date(self):
-        df_with_date = convert_timestamp_to_date(self.df)
-        self.assertTrue("login_date" in df_with_date.columns)
-        self.assertEqual(df_with_date.select("login_date").first()[0], "2023-09-05")
-
-if __name__ == '__main__':
-    unittest.main()
+    def test_login_date(self):
+        df = create_df(self.spark, log_data, log_schema)
+        df = updateColumnName(df)
+        expected_df = convert_timestamp_login_date(df)
+        test_data = [
+            (1, 101, 'login', '2023-09-05'),
+            (2, 102, 'click', '2023-09-06'),
+            (3, 101, 'click', '2023-09-07'),
+            (4, 103, 'login', '2023-09-08'),
+            (5, 102, 'logout', '2023-09-09'),
+            (6, 101, 'click', '2023-09-10'),
+            (7, 103, 'click', '2023-09-11'),
+            (8, 102, 'click', '2023-09-12')
+        ]
+        test_schema = ["log_id", "user_id", "user_activity", "timestamp"]
+        actual_df = create_df(self.spark, test_data, test_schema)
+        actual_df = updateColumnName(actual_df)
+        actual_df = actual_df.select("log_id", "user_id", "user_activity", to_date("time_stamp").alias("login_date"))
+        self.assertEqual(expected_df.collect(), actual_df.collect())

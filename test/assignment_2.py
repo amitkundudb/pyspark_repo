@@ -1,80 +1,85 @@
-import sys
+
 import unittest
-from io import StringIO
-
-from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType
-
-from src.assignment_2.util import increase_partitions, decrease_partitions, print_partitions, create_dataframe, \
-    create_spark_session, mask_card_numbers
+from src.assignment_2.util import *
 
 
-class TestPysparkFunctions(unittest.TestCase):
+class TestAssignment2(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Initialize Spark session
-        cls.spark = SparkSession.builder.appName("Unit Test").getOrCreate()
-
-        # Create DataFrame
-        cls.data = [
-            ("1234567891234567",),
-            ("5678912345671234",),
-            ("9123456712345678",),
-            ("1234567812341122",),
-            ("1234567812341342",)
-        ]
-        cls.schema = StructType([
-            StructField("card_number", StringType(), True)
-        ])
-        cls.df = cls.spark.createDataFrame(cls.data, schema=cls.schema)
+        cls.spark = SparkSession.builder.appName("Assignment 2 Testcase").getOrCreate()
 
     @classmethod
     def tearDownClass(cls):
-        # Stop Spark session
         cls.spark.stop()
 
-    # Test function to create Spark session
-    def test_create_spark_session(self):
-        spark_session = create_spark_session()
-        self.assertTrue(isinstance(spark_session, SparkSession))
+    def test_create_df(self):
+        test_credit_card_data = [("1234567891234567",),
+                                 ("5678912345671234",),
+                                 ("9123456712345678",),
+                                 ("1234567812341122",),
+                                 ("1234567812341342",)]
+        test_credit_card_custom_schema = StructType([
+            StructField("card_number", StringType(), True)
+        ])
+        df = create_df(self.spark, test_credit_card_data, test_credit_card_custom_schema)
+        self.assertEqual(df.count(), len(test_credit_card_data))
 
-    # Test function to create DataFrame
-    def test_create_dataframe(self):
-        df = create_dataframe(self.spark)
-        self.assertEqual(df.count(), len(self.data))
+    def test_create_df_csv(self):
+        path_csv = r"C:\Users\AmitKundu\PycharmProjects\pyspark_repo\resource\assignment_2_sample.csv"
+        credit_schema = StructType([
+            StructField("card_number", StringType(), True)
+        ])
+        df = create_df_csv(self.spark, path_csv, credit_schema)
+        test_credit_card_data = [("1234567891234567",),
+                                 ("5678912345671234",),
+                                 ("9123456712345678",),
+                                 ("1234567812341122",),
+                                 ("1234567812341342",)]
+        test_credit_card_custom_schema = StructType([
+            StructField("card_number", StringType(), True)
+        ])
+        expected_df = create_df(self.spark, test_credit_card_data, test_credit_card_custom_schema)
+        self.assertEqual(df.collect(), expected_df.collect())
 
-    # Test function to print number of partitions
-    def test_print_partitions(self):
-        initial_partition = self.df.rdd.getNumPartitions()
-        captured_output = StringIO()
-        sys.stdout = captured_output
-        print_partitions(self.df)
-        sys.stdout = sys.__stdout__
-        self.assertIn("Number of partitions before repartitioning: {}".format(initial_partition), captured_output.getvalue())
+    def test_create_df_json(self):
+        path_json = "C:/Users/AmitKundu/PycharmProjects/pyspark_repo/resource/assignment_2_sample.json"
+        df = create_df_json(self.spark, path_json)
+        test_credit_card_data = [('1234567891234560',),
+                                 ('5678912345671230',),
+                                 ('9123456712345670',),
+                                 ('1234567812341120',),
+                                 ('1234567812341340',)]
+        test_credit_card_custom_schema = StructType([
+            StructField("card_number", StringType(), True)
+        ])
+        expected_df = create_df(self.spark, test_credit_card_data, test_credit_card_custom_schema)
+        self.assertIsNotNone(df.collect(), expected_df.collect())
 
-    # Test function to increase partition size to 5
-    def test_increase_partitions(self):
-        initial_partition = self.df.rdd.getNumPartitions()
-        new_df = increase_partitions(self.df, initial_partition)
-        self.assertEqual(new_df.rdd.getNumPartitions(), initial_partition + 5)
+    def test_get_no_of_partitions(self):
+        df = create_df(self.spark, credit_card_data, credit_card_schema)
+        partitions = get_no_of_partitions(df)
+        self.assertEqual(partitions, 8)
 
-    # Test function to decrease partition size back to original size
-    def test_decrease_partitions(self):
-        initial_partition = self.df.rdd.getNumPartitions()
-        new_df = decrease_partitions(self.df, initial_partition)
-        self.assertEqual(new_df.rdd.getNumPartitions(), initial_partition)
+    def test_increase_partition_by_5(self):
+        df = create_df(self.spark, credit_card_data, credit_card_schema)
+        initial_partitions = get_no_of_partitions(df)
+        new_partitions = increase_partition_by_5(df)
+        self.assertEqual(new_partitions, initial_partitions + 5)
 
-    # Test function to mask the card numbers, showing only the last 4 digits
-    def test_mask_card_numbers(self):
-        df_with_masked_cards = mask_card_numbers(self.df)
-        masked_card_numbers = df_with_masked_cards.select("masked_card_number").collect()
-        expected_result = [('************4567',),
-                           ('************1234',),
-                           ('************5678',),
-                           ('************1122',),
-                           ('************1342',)]
-        self.assertEqual(masked_card_numbers, expected_result)
+    def test_decrease_partition_by_5(self):
+        df = create_df(self.spark, credit_card_data, credit_card_schema)
+        final_partitions = decrease_partition_by_5(df)
+        self.assertEqual(final_partitions, 8)
+
+    def test_masked_card_number_udf(self):
+        df = create_df_custom_schema(self.spark, credit_card_data, credit_card_custom_schema)
+        df = df.withColumn("masked_number", masked_card_number_udf(df["card_number"]))
+        masked_numbers = df.select("masked_number").rdd.flatMap(lambda x: x).collect()
+        expected_masked_numbers = ['************4567', '************1234', '************5678',
+                                   '************1122', '************1342']
+        self.assertEqual(masked_numbers, expected_masked_numbers)
+
 
 if __name__ == '__main__':
     unittest.main()

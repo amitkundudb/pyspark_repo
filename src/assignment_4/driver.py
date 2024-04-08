@@ -1,35 +1,34 @@
+
 from src.assignment_4.util import *
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format='%(message)s')
-    spark = SparkSession.builder.appName("Assignment 4").getOrCreate()
-    data_path = "C:/Users/AmitKundu/PycharmProjects/pyspark_repo/resource/assignment_4.json"
+spark = spark_session()
 
-    logging.info("1. Read JSON file provided in the attachment")
-    df = read_json_file(data_path)
-    df.show()
+# Read JSON file
+df = read_json(spark, json_path)
+df.show()
 
-    flattend_df = flatten_dataframe(df)
-    logging.info("2. Flatten the data frame which is a custom schema")
-    flattend_df.show()
+# Flatten the DataFrame
+flattened_df = flatten_df(df)
+flattened_df.show()
 
-    logging.info("3. Record count when flattened and when it's not flattened")
-    record_count_before_after_flatten(df, flattend_df)
+# Print record count before and after flattening
+count_before_after_flatten(df, flattened_df)
 
-    differentiate_with_functions(df)
+# Differentiate the difference using explode, explode outer, posexplode functions
+diff_explode_outer_posexplode(spark)
 
-    logging.info("5. Filter id's which are equal to 1001")
-    filtered_df = filter_ids(flattend_df, 1001)
-    filtered_df.show()
+# Filter the DataFrame for empId == 1001
+filtered_df = filter_employee_with_id(flattened_df, 1001)
+filtered_df.show()
 
-    logging.info("6. Convert the column names from camel case to snake case")
-    df_camel_to_snake = convert_columns_to_snake_case(flattend_df)
-    df_camel_to_snake.show()
+# Convert column names from camel case to snake case
+snake_case_df = toSnakeCase(flattened_df)
+snake_case_df.show()
 
-    logging.info("7. Add a new column named load_date with the current date")
-    date_column_df = add_load_date_column(flattend_df)
-    date_column_df.show()
+# Add a new column named load_date with the current date
+load_date_df = add_load_date_with_current_date(snake_case_df)
+load_date_df.show()
 
-    logging.info("8. Create 3 new columns as year, month, and day from the load_date column")
-    date_month_year_df = create_year_month_day_columns(date_column_df)
-    date_month_year_df.show()
+# Create 3 new columns as year, month, and day from the load_date column
+year_month_day_df = add_year_month_day(load_date_df)
+year_month_day_df.show()
