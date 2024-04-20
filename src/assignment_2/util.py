@@ -5,7 +5,7 @@ from pyspark.sql.types import StringType, StructType, StructField
 
 
 def spark_session():
-    spark = SparkSession.builder.appName('spark-assignment').getOrCreate()
+    spark = SparkSession.builder.appName('Pyspark assignment_2').getOrCreate()
     return spark
 
 
@@ -19,6 +19,7 @@ credit_card_custom_schema = StructType([
     StructField("card_number", StringType(), True)
 ])
 
+# 1.Create a Dataframe as credit_card_df with different read methods
 
 def create_df(spark, df_data, df_schema):
     df = spark.createDataFrame(df_data, df_schema)
@@ -36,7 +37,7 @@ def create_df_csv(spark, path_csv, schema):
 
 
 def create_df_csv_custom_schema(spark, path_csv, custom_schema):
-    df = spark.read.format("csv").option("header", "true").schema(custom_schema).load(path_csv)
+    df = spark.read.format("csv").option(header = "True").schema(custom_schema).load(path_csv)
     return df
 
 
@@ -44,11 +45,13 @@ def create_df_json(spark, path_json):
     df = spark.read.option("multiline", "true").json(path_json)
     return df
 
+# 2. print number of partitions
 
 def get_no_of_partitions(df):
     total_partitions = df.rdd.getNumPartitions()
     return total_partitions
 
+# 3. Increase the partition size to 5
 
 def increase_partition_by_5(df):
     total_partition = get_no_of_partitions(df)
@@ -56,6 +59,7 @@ def increase_partition_by_5(df):
     new_total_partition_size = new_total_partition.getNumPartitions()
     return new_total_partition_size
 
+# 4. Decrease the partition size back to its original partition size
 
 def decrease_partition_by_5(df):
     new_total_partition = increase_partition_by_5(df)
@@ -63,10 +67,11 @@ def decrease_partition_by_5(df):
     original_partition_size = original_partition.getNumPartitions()
     return original_partition_size
 
+# 5.Create a UDF to print only the last 4 digits marking the remaining digits as *
+# Eg: ************4567
 
 def masked_card_number(cardNumber):
     masked_number = '*' * (len(cardNumber) - 4) + cardNumber[-4:]
     return masked_number
-
 
 masked_card_number_udf = udf(masked_card_number)

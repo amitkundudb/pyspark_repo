@@ -1,11 +1,10 @@
-
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import datediff, expr, col, to_date
 from pyspark.sql.types import StructType, StructField, IntegerType, StringType, TimestampType
 
 
 def spark_session():
-    spark = SparkSession.builder.appName('spark-assignment').getOrCreate()
+    spark = SparkSession.builder.appName('Pyspark assignment_3').getOrCreate()
     return spark
 
 
@@ -25,7 +24,7 @@ log_schema = StructType([
     StructField("action", StringType(), True),
     StructField("timestamp", StringType(), True)
 ])
-
+# 1. Create a Data Frame with custom schema creation by using Struct Type and Struct Field
 
 def create_df(spark, data, schema):
     df = spark.createDataFrame(data, schema)

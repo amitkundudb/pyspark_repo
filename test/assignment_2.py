@@ -31,11 +31,11 @@ class TestAssignment2(unittest.TestCase):
             StructField("card_number", StringType(), True)
         ])
         df = create_df_csv(self.spark, path_csv, credit_schema)
-        test_credit_card_data = [("1234567891234567",),
-                                 ("5678912345671234",),
-                                 ("9123456712345678",),
-                                 ("1234567812341122",),
-                                 ("1234567812341342",)]
+        test_credit_card_data = [("1234567891234560",),
+                                 ("5678912345671230",),
+                                 ("9123456712345670",),
+                                 ("1234567812341120",),
+                                 ("1234567812341340",)]
         test_credit_card_custom_schema = StructType([
             StructField("card_number", StringType(), True)
         ])

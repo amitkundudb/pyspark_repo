@@ -1,4 +1,3 @@
-
 from src.assignment_5.util import *
 
 spark = spark_session()

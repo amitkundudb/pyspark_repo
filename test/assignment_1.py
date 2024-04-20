@@ -40,18 +40,14 @@ class TestAssignment1(unittest.TestCase):
 
         test_purchase_df = create_dataframe(self.spark, test_purchase_data, test_purchase_schema)
 
-        result_df = find_in_df(test_purchase_df, "product_name", "iphone13")
+        result_df = find_in_df(test_purchase_df,"customer", "product_name", "iphone13")
 
         expected_schema = StructType([
-            StructField("customer", IntegerType(), True),
-            StructField("product_model", StringType(), True)
+            StructField("customer", IntegerType(), True)
         ])
 
         expected_data = [
-            (1, "iphone13"),
-            (2, "iphone13"),
-            (3, "iphone13"),
-            (4, "iphone13")
+            (4,)
         ]
 
         expected_df = create_dataframe(self.spark, expected_data, expected_schema)
@@ -70,9 +66,7 @@ class TestAssignment1(unittest.TestCase):
 
         test_purchase_df = create_dataframe(self.spark, test_purchase_data, test_purchase_schema)
 
-        only_iphone13 = find_in_df(test_purchase_df, "product_model", "iphone13")
-
-        result_df = find_iphone14(test_purchase_df, only_iphone13)
+        result_df = find_iphone14(test_purchase_df)
 
         expected_schema = StructType([
             StructField("customer", IntegerType(), True),
