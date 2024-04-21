@@ -9,10 +9,6 @@ class TestAssignment2(unittest.TestCase):
     def setUpClass(cls):
         cls.spark = SparkSession.builder.appName("Assignment 2 Testcase").getOrCreate()
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.spark.stop()
-
     def test_create_df(self):
         test_credit_card_data = [("1234567891234567",),
                                  ("5678912345671234",),

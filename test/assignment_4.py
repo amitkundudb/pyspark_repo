@@ -8,10 +8,6 @@ class TestAssignment4(unittest.TestCase):
     def setUpClass(cls):
         cls.spark = SparkSession.builder.appName("spark-assignment").getOrCreate()
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.spark.stop()
-
     def test_read_json(self):
         df = read_json(self.spark, json_path)
         self.assertEqual(df.count(), 1)

@@ -7,10 +7,6 @@ class TestAssignment3(unittest.TestCase):
     def setUpClass(cls):
         cls.spark = SparkSession.builder.appName("PySpark Assignment").getOrCreate()
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.spark.stop()
-
     def test_rename_df(self):
         df = create_df(self.spark, log_data, log_schema)
         expected_df = updateColumnName(df)

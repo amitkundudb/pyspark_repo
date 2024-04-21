@@ -8,10 +8,6 @@ class TestAssignment1(unittest.TestCase):
     def setUpClass(cls):
         cls.spark = SparkSession.builder.appName("PySpark Assignment").getOrCreate()
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.spark.stop()
-
     def test_create_dataframe(self):
         test_purchase_schema = StructType([
             StructField("customer", IntegerType(), True),
